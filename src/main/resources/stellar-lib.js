@@ -9539,10 +9539,11 @@ var stellar =
 	  }
 	};
 
+/*
 	if (window.console && window.console.log) {
 	  exports.Log.engine = InteractiveLogEngine;
 	}
-
+*/
 
 /***/ },
 /* 25 */
