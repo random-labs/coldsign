@@ -45,6 +45,8 @@ object EntropyPreparePage {
     )
   }
 
+  def spinningCog = <.i(^.`class` := "fa fa-cog fa-spin fa-3x")
+
   val page = ReactComponentB[Unit](getClass().getName())
     .initialState((false, 0.0))
     .backend(_ => new MyBackend)
@@ -57,12 +59,30 @@ object EntropyPreparePage {
             ^.cls := "col-md-4 col-md-offset-4",
             <.div(
               <.p(<.b("STR38 Wallet")),
-              <.p(<.i("accumulating randomness, move mouse around..."))
+              <.p(<.i("accumulating randomness...")),
+              <.p("something may help"),
+              <.ul(<.li( "move mouse around..."),
+                <.li( "monkey typing...")
+              )
             ),
             <.div(
-              <.i(^.`class` := "fa fa-cog fa-spin fa-3x")
+              spinningCog
             ),
-            coloredProgressBar(S._1, S._2)
+            coloredProgressBar(S._1, S._2),
+
+            <.div(
+              if (S._1)
+                <.button(
+                  ^.cls := "btn btn-primary btn-lg btn-block",
+                  ^.`type` := "button",
+                  Wallet.theWallet match {
+                    case Some(_) => "Open Wallet";
+                    case None => "Create Wallet";
+                  }
+                )
+              else
+                <.span("")
+            )
           )
         )
       )
@@ -122,7 +142,7 @@ object Main extends js.JSApp{
     dom.console.log(">main()");
     jQuery(() => {
       sjcl.veryrandom.reset()
-      EntropyPreparePage.page() render dom.document.body
+      EntropyPreparePage.page() render dom.document.getElementById("content")
     })
 
   }
