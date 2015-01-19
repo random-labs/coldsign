@@ -22,7 +22,7 @@ package sjcl {
       if (js.Dynamic.global.stellar.sjcl.random.isReady(max_paranoia) == _REQUIRES_RESEED) {
         js.Dynamic.global.stellar.sjcl.random.randomWords(3, max_paranoia)
       }
-      (js.Dynamic.global.stellar.sjcl.random.isReady(max_paranoia) == _READY)
+      ((js.Dynamic.global.stellar.sjcl.random.isReady(max_paranoia).asInstanceOf[js.prim.Number] & _READY) == _READY)
     }
     def randomWords(nwords :Int) = js.Dynamic.global.stellar.sjcl.random.randomWords(nwords, max_paranoia).asInstanceOf[js.Array[js.prim.Number]]
 
