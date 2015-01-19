@@ -2,3 +2,4 @@
 .ensime*
 project/project/*
 target/*
+cold-wallet.txt

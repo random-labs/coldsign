@@ -19,6 +19,7 @@ package stellar {
     def random() :Seed = ???
     def get_key() :KeyPair = ???
     def to_json() :js.Object = ???
+    def parse_json(s :js.String) :Seed = ???
   }
 
 
