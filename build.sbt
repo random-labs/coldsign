@@ -6,8 +6,12 @@ scalaVersion := "2.11.4"
 
 ScalaJSKeys.persistLauncher in Compile := true
 
-//ScalaJSKeys.jsDependencies += scala.scalajs.sbtplugin.RuntimeDOM
-// ScalaJSKeys.jsDependencies += "org.webjars" % "react" % "0.12.2" / "react-with-addons.js" commonJSName "React"
+ScalaJSKeys.jsDependencies += scala.scalajs.sbtplugin.RuntimeDOM
+
+ScalaJSKeys.jsDependencies += "org.webjars" % "react" % "0.12.2" / "react-with-addons.js" commonJSName "React"
+
+//!not work! ScalaJSKeys.jsDependencies += "org.webjars" % "materializecss" % "0.95.0" / "js/materialize.js"
+
 skip in ScalaJSKeys.packageJSDependencies := false
 
 libraryDependencies += "org.scala-lang.modules.scalajs" %%% "scalajs-jquery" % "0.6"

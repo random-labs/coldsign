@@ -31,13 +31,7 @@ object EntropyPreparePage {
 
     <.div(^.`class` := "progress",
       <.div(
-        ^.classSet1("progress-bar",
-          "progress-bar-success" -> ready,
-          "progress-bar-danger" -> (ready == false)),
-        ^.role := "progressbar",
-        "aria-valuenow".reactAttr := "40",
-        "aria-valuemin".reactAttr := "0",
-        "aria-valuemax".reactAttr := "100",
+        ^.classSet1("determinate"),
         ^.width := perc,
         <.span(^.`class` := "sr-only", perc),
         perc
@@ -47,42 +41,40 @@ object EntropyPreparePage {
 
   def spinningCog = <.i(^.`class` := "fa fa-cog fa-spin fa-3x")
 
+  import japgolly.scalajs.react.vdom.all._
   val page = ReactComponentB[Unit](getClass().getName())
     .initialState((false, 0.0))
     .backend(_ => new MyBackend)
     .render((_, S, B) => {
       <.div(
-        ^.cls := "container-fluid",
+        ^.cls := "row",
         <.div(
-          ^.cls := "row",
+          ^.cls := "col s4 offset-s4",
           <.div(
-            ^.cls := "col-md-4 col-md-offset-4",
-            <.div(
-              <.p(<.b("STR38 Wallet")),
-              <.p(<.i("accumulating randomness...")),
-              <.p("something may help"),
-              <.ul(<.li( "move mouse around..."),
-                <.li( "monkey typing...")
-              )
-            ),
-            <.div(
-              spinningCog
-            ),
-            coloredProgressBar(S._1, S._2),
-
-            <.div(
-              if (S._1)
-                <.button(
-                  ^.cls := "btn btn-primary btn-lg btn-block",
-                  ^.`type` := "button",
-                  Wallet.theWallet match {
-                    case Some(_) => "Open Wallet";
-                    case None => "Create Wallet";
-                  }
-                )
-              else
-                <.span("")
+            <.p(<.b("STR38 Wallet")),
+            <.p(<.i("accumulating randomness...")),
+            <.p("something may help"),
+            <.ul(<.li( "move mouse around..."),
+              <.li( "monkey typing...")
             )
+          ),
+          <.div(
+            spinningCog
+          ),
+          coloredProgressBar(S._1, S._2),
+
+          <.div(
+            if (S._1)
+              <.button(
+                ^.cls := "btn waves-effect waves-light",
+                ^.`type` := "button",
+                Wallet.theWallet match {
+                  case Some(_) => "Open Wallet";
+                  case None => "Create Wallet";
+                }
+              )
+            else
+              <.span("")
           )
         )
       )
