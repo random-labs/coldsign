@@ -7,7 +7,7 @@ import japgolly.scalajs.react._, vdom.prefix_<^._, extra._
 
 import org.scalajs.dom
 
-import org.scalajs.jquery.jQuery;
+import org.scalajs.jquery.{jQuery, JQuery};
 
 import scala.scalajs.js.annotation.JSExport
 
@@ -17,7 +17,7 @@ import scala.scalajs.js.annotation.JSExport
 object Wallet{
   var theWallet = None:Option[String]
   @JSExport
-  def parse(hexstr: js.String) {
+  def parse(hexstr: String) {
     dom.console.log("parsing" + hexstr)
     theWallet = Some(hexstr)
   }
@@ -121,6 +121,61 @@ object GenerateAddressPage {
       .buildU
 }
 
+object JQueryKeypad {
+  trait prototype extends JQuery {
+    def keypad(s :js.Any): this.type = js.native
+  }
+  implicit def jq2keypad(jq: JQuery): prototype = jq.asInstanceOf[prototype]
+
+  def apply(jq: JQuery) {
+    jq.keypad(js.Dynamic.literal(
+      showOn = "focus",
+      showAnim = "",
+      randomiseAlphabetic = true,
+      randomiseNumeric = true,
+      // randomiseOther = true,
+      layout = js.Dynamic.global.`$`.keypad.qwertyLayout)
+    )
+  }
+}
+
+object WalletApp {
+  import japgolly.scalajs.react.vdom.all._
+
+
+  val newSeedPanel = ReactComponentB[Unit](getClass().getName())
+    .render((_) => {
+      <.h1("Create Wallet")
+    }).buildU
+
+  val authPanel = ReactComponentB[Unit](getClass().getName())
+      .render((_) => {
+        """<p><span class="demoLabel">&#160;</span>
+        <input type="text" id="randomKeyboard" class="ui-state-active"></p> """
+        <.p(<.input(^.`type` := "text", ^.id := "randomKeyboard"))
+      })
+    .componentDidMount(c => {
+      JQueryKeypad(jQuery("#randomKeyboard"))
+    })
+    .buildU
+
+  val page = ReactComponentB[Unit](getClass().getName())
+    .render((_) => {
+      <.div(
+        ^.cls := "row",
+        <.div(
+          ^.cls := "col l4",
+          "Stellar"),
+        <.div(
+          ^.cls := "col l8",
+          "Wallet"),
+        newSeedPanel(),
+        authPanel()
+      )
+
+    }).buildU
+}
+
 object Main extends js.JSApp{
 
   def checkWallet() {
@@ -134,7 +189,7 @@ object Main extends js.JSApp{
     dom.console.log(">main()");
     jQuery(() => {
       sjcl.veryrandom.reset()
-      EntropyPreparePage.page() render dom.document.getElementById("content")
+      WalletApp.page() render dom.document.getElementById("content")
     })
 
   }
