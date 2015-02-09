@@ -1,23 +1,24 @@
-scalaJSSettings
+enablePlugins(ScalaJSPlugin)
 
 name := "stellar-coldsign"
 
-scalaVersion := "2.11.4"
+scalaVersion := "2.11.5"
 
-ScalaJSKeys.persistLauncher in Compile := true
+persistLauncher in Compile := true
 
-ScalaJSKeys.jsDependencies += scala.scalajs.sbtplugin.RuntimeDOM
+jsDependencies += "org.webjars" % "react" % "0.12.2" / "react-with-addons.js" commonJSName "React"
 
-ScalaJSKeys.jsDependencies += "org.webjars" % "react" % "0.12.2" / "react-with-addons.js" commonJSName "React"
+requiresDOM := true
 
 //!not work! ScalaJSKeys.jsDependencies += "org.webjars" % "materializecss" % "0.95.0" / "js/materialize.js"
 
-skip in ScalaJSKeys.packageJSDependencies := false
+skip in packageJSDependencies := false
 
-libraryDependencies += "org.scala-lang.modules.scalajs" %%% "scalajs-jquery" % "0.6"
+//libraryDependencies += "be.doeraene" %%% "scalajs-jquery" % "0.8.0"
+libraryDependencies += "be.doeraene" %%% "scalajs-jquery" % "0.7.0"
 
-libraryDependencies += "com.github.japgolly.scalajs-react" %%% "core" % "0.7.1"
+libraryDependencies += "com.github.japgolly.scalajs-react" %%% "core" % "0.7.2"
 
 // Extra features
-libraryDependencies += "com.github.japgolly.scalajs-react" %%% "extra" % "0.7.1"
+libraryDependencies += "com.github.japgolly.scalajs-react" %%% "extra" % "0.7.2"
 
