@@ -39,13 +39,30 @@ object EntropyPreparePage {
     )
   }
 
+  def entropyControl = ReactComponentB[Unit](getClass().getName())
+    .initialState((false, 0.0))
+    .backend(_ => new MyBackend)
+    .render((_, S, B) => {
+      <.div( ^.cls := "row",
+        <.div( ^.cls := "col l11", coloredProgressBar(S._1, S._2)),
+        <.div( ^.cls := "col l1",
+          <.a(^.classSet1("btn-flat", "disabled"->(S._1 == false)),
+            ^.onClick --> sjcl.veryrandom.reset(),
+            <.i(^.cls := "tiny mdi-navigation-refresh")))
+      )
+    })
+    .componentDidMount(c => {
+      c.backend.setInterval({c.setState((sjcl.veryrandom.isReady(), sjcl.veryrandom.getProgress()))}, 500)
+    })
+    .configure(SetInterval.install)
+    .buildU
+
+
   def spinningCog = <.i(^.`class` := "fa fa-cog fa-spin fa-3x")
 
   import japgolly.scalajs.react.vdom.all._
   val page = ReactComponentB[Unit](getClass().getName())
-    .initialState((false, 0.0))
-    .backend(_ => new MyBackend)
-    .render((_, S, B) => {
+    .render((_) => {
       <.div(
         ^.cls := "row",
         <.div(
@@ -61,29 +78,24 @@ object EntropyPreparePage {
           <.div(
             spinningCog
           ),
-          coloredProgressBar(S._1, S._2),
-
-          <.div(
-            if (S._1)
-              <.button(
-                ^.cls := "btn waves-effect waves-light",
-                ^.`type` := "button",
-                Wallet.theWallet match {
-                  case Some(_) => "Open Wallet";
-                  case None => "Create Wallet";
-                }
-              )
-            else
-              <.span("")
-          )
+          entropyControl()// ,
+          // <.div(
+          //   if (S._1)
+          //     <.button(
+          //       ^.cls := "btn waves-effect waves-light",
+          //       ^.`type` := "button",
+          //       Wallet.theWallet match {
+          //         case Some(_) => "Open Wallet";
+          //         case None => "Create Wallet";
+          //       }
+          //     )
+          //   else
+          //     <.span("")
+          // )
         )
       )
       
     })
-    .componentDidMount(c => {
-      c.backend.setInterval({c.setState((sjcl.veryrandom.isReady(), sjcl.veryrandom.getProgress()))}, 500)
-    })
-    .configure(SetInterval.install)
     .buildU
 }
 
@@ -150,9 +162,7 @@ object WalletApp {
 
   val authPanel = ReactComponentB[Unit](getClass().getName())
       .render((_) => {
-        """<p><span class="demoLabel">&#160;</span>
-        <input type="text" id="randomKeyboard" class="ui-state-active"></p> """
-        <.p(<.input(^.`type` := "text", ^.id := "randomKeyboard"))
+        <.p(<.span("Password"), <.input(^.`type` := "password", ^.id := "randomKeyboard"))
       })
     .componentDidMount(c => {
       JQueryKeypad(jQuery("#randomKeyboard"))
@@ -160,7 +170,7 @@ object WalletApp {
     .buildU
 
   val page = ReactComponentB[Unit](getClass().getName())
-    .render((_) => {
+    .render((_) => {      
       <.div(
         ^.cls := "row",
         <.div(
@@ -190,6 +200,7 @@ object Main extends js.JSApp{
     jQuery(() => {
       sjcl.veryrandom.reset()
       WalletApp.page() render dom.document.getElementById("content")
+      EntropyPreparePage.entropyControl() render dom.document.getElementById("entropy_ctrl")
     })
 
   }
