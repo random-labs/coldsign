@@ -46,12 +46,16 @@ object EntropyPreparePage {
       <.div( ^.cls := "row",
         <.div( ^.cls := "col l11", coloredProgressBar(S._1, S._2)),
         <.div( ^.cls := "col l1",
-          <.a(^.classSet1("btn-flat", "disabled"->(S._1 == false)),
+          <.a(^.classSet1("btn-flat tooltipped", "disabled"->(S._1 == false)),
+            "data-tooltip".reactAttr := "Reset entropy",
+            "data-delay".reactAttr := "50",
+            "data-position".reactAttr := "left",
             ^.onClick --> sjcl.veryrandom.reset(),
             <.i(^.cls := "tiny mdi-navigation-refresh")))
       )
     })
     .componentDidMount(c => {
+      JQueryMaterialize.tooltip(jQuery(".tooltipped"))
       c.backend.setInterval({c.setState((sjcl.veryrandom.isReady(), sjcl.veryrandom.getProgress()))}, 500)
     })
     .configure(SetInterval.install)
@@ -151,6 +155,19 @@ object JQueryKeypad {
   }
 }
 
+object JQueryMaterialize {
+  trait prototype extends JQuery {
+    def tooltip(s :js.Object): this.type = js.native
+  }
+  implicit def jq2mat(jq: JQuery): prototype = jq.asInstanceOf[prototype]
+
+  def tooltip(jq: JQuery) {
+    jq.tooltip(js.Dynamic.literal(
+      delay = 50)
+    )
+  }
+}
+
 object WalletApp {
   import japgolly.scalajs.react.vdom.all._
 
@@ -202,6 +219,5 @@ object Main extends js.JSApp{
       WalletApp.page() render dom.document.getElementById("content")
       EntropyPreparePage.entropyControl() render dom.document.getElementById("entropy_ctrl")
     })
-
   }
 }
