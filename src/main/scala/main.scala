@@ -1,3 +1,5 @@
+import scala.util.{Try, Success, Failure}
+import scala.concurrent.duration._
 
 import scala.scalajs.js
 
@@ -11,96 +13,14 @@ import org.scalajs.jquery.{jQuery, JQuery};
 
 import scala.scalajs.js.annotation.JSExport
 
+import japgolly.scalajs.react.extra._
 
-
-@JSExport("Wallet")
+case class WalletData (name :String, cold_seed :String, warm_seed :String, as_gateway :Boolean)
 object Wallet{
-  var theWallet = None:Option[String]
-  @JSExport
-  def parse(hexstr: String) {
+  def parse(hexstr: String) :Option[WalletData] = {
     dom.console.log("parsing" + hexstr)
-    theWallet = Some(hexstr)
+    Some(WalletData("", "", "", false))
   }
-}
-
-object EntropyPreparePage {
-  class MyBackend extends SetInterval
-
-  def coloredProgressBar(ready :Boolean, progress :Double) = {
-    val perc = "%2.1f%%".format(progress*100)
-
-    <.div(^.`class` := "progress",
-      <.div(
-        ^.classSet1("determinate"),
-        ^.width := perc,
-        <.span(^.`class` := "sr-only", perc),
-        perc
-      )
-    )
-  }
-
-  def entropyControl = ReactComponentB[Unit](getClass().getName())
-    .initialState((false, 0.0))
-    .backend(_ => new MyBackend)
-    .render((_, S, B) => {
-      <.div( ^.cls := "row",
-        <.div( ^.cls := "col l11", coloredProgressBar(S._1, S._2)),
-        <.div( ^.cls := "col l1",
-          <.a(^.classSet1("btn-flat tooltipped", "disabled"->(S._1 == false)),
-            "data-tooltip".reactAttr := "Reset entropy",
-            "data-delay".reactAttr := "50",
-            "data-position".reactAttr := "left",
-            ^.onClick --> sjcl.veryrandom.reset(),
-            <.i(^.cls := "tiny mdi-navigation-refresh")))
-      )
-    })
-    .componentDidMount(c => {
-      JQueryMaterialize.tooltip(jQuery(".tooltipped"))
-      c.backend.setInterval({c.setState((sjcl.veryrandom.isReady(), sjcl.veryrandom.getProgress()))}, 500)
-    })
-    .configure(SetInterval.install)
-    .buildU
-
-
-  def spinningCog = <.i(^.`class` := "fa fa-cog fa-spin fa-3x")
-
-  import japgolly.scalajs.react.vdom.all._
-  val page = ReactComponentB[Unit](getClass().getName())
-    .render((_) => {
-      <.div(
-        ^.cls := "row",
-        <.div(
-          ^.cls := "col s4 offset-s4",
-          <.div(
-            <.p(<.b("STR38 Wallet")),
-            <.p(<.i("accumulating randomness...")),
-            <.p("something may help"),
-            <.ul(<.li( "move mouse around..."),
-              <.li( "monkey typing...")
-            )
-          ),
-          <.div(
-            spinningCog
-          ),
-          entropyControl()// ,
-          // <.div(
-          //   if (S._1)
-          //     <.button(
-          //       ^.cls := "btn waves-effect waves-light",
-          //       ^.`type` := "button",
-          //       Wallet.theWallet match {
-          //         case Some(_) => "Open Wallet";
-          //         case None => "Create Wallet";
-          //       }
-          //     )
-          //   else
-          //     <.span("")
-          // )
-        )
-      )
-      
-    })
-    .buildU
 }
 
 object GenerateAddressPage {
@@ -158,6 +78,7 @@ object JQueryKeypad {
 object JQueryMaterialize {
   trait prototype extends JQuery {
     def tooltip(s :js.Object): this.type = js.native
+    def openModal(s :js.Object): this.type = js.native
   }
   implicit def jq2mat(jq: JQuery): prototype = jq.asInstanceOf[prototype]
 
@@ -166,11 +87,129 @@ object JQueryMaterialize {
       delay = 50)
     )
   }
+
+  def openModal(jq: JQuery) {
+    jq.openModal(js.Dynamic.literal(dismissible = false))
+  }
 }
 
+
 object WalletApp {
+
+  case class EntropyStatus(ready :Boolean, progress :Double)
+  class AppBackend extends SetInterval with Broadcaster[EntropyStatus] {
+    def doTick() = {
+      broadcast(EntropyStatus(sjcl.veryrandom.isReady(), sjcl.veryrandom.getProgress()))
+    }
+  }
+
+  val coloredProgressBar = ReactComponentB[AppBackend](getClass().getName())
+    .initialState(EntropyStatus(false, 0.0))
+    .backend(_ => new OnUnmount.Backend)
+    .render((P, S, B) => {
+      val progress = S.progress
+      val perc = "%2.1f%%".format(progress*100)
+      <.div(^.`class` := "progress",
+        <.div(
+          ^.classSet1("determinate"),
+          ^.width := perc,
+          <.span(^.`class` := "sr-only", perc),
+          perc
+        )
+      )
+    })
+    .configure(Listenable.install(identity, (c) => {(a:EntropyStatus) =>{c.setState(a)}}))
+    .build
+
+  val refreshBtn = ReactComponentB[AppBackend](getClass().getName())
+    .initialState(false)
+    .backend(_ => new OnUnmount.Backend)
+    .render((P, S, B) => {
+      <.a(^.classSet1("btn-flat tooltipped", "disabled"->(S==false)),
+        "data-tooltip".reactAttr := "Reset entropy",
+        "data-delay".reactAttr := "50",
+        "data-position".reactAttr := "left",
+        ^.onClick --> sjcl.veryrandom.reset(),
+        <.i(^.cls := "tiny mdi-navigation-refresh"))
+    })
+    .configure(Listenable.install(identity, (c) => {(a:EntropyStatus) =>{
+      if (a.ready != c._state.v) c.setState(a.ready)
+    }}))
+    .componentDidMount(c => {
+      JQueryMaterialize.tooltip(jQuery(".tooltipped"))
+    })
+    .build
+
+  def entropyBar = ReactComponentB[AppBackend](getClass().getName())
+    .render(P => {
+      <.div( ^.cls := "row",
+        <.div( ^.cls := "col l11", coloredProgressBar(P)),
+        <.div( ^.cls := "col l1",
+          refreshBtn(P)
+        )
+      )
+    })
+    .build
+
+  val nextBtn = ReactComponentB[AppBackend](getClass().getName())
+    .initialState(false)
+    .backend(_ => new OnUnmount.Backend)
+    .render((P, S, B) => {
+      <.a(^.href := "#",
+        ^.classSet1(
+          "waves-effect waves-green btn-flat modal-action modal-close",
+          "disabled" -> (S == false)
+        ),
+        "Next")
+
+    })
+    .configure(Listenable.install(identity, (c) => {(a:EntropyStatus) =>{
+      if (a.ready != c._state.v) c.setState(a.ready)
+    }}))
+    .componentDidMount(c => {
+      JQueryMaterialize.tooltip(jQuery(".tooltipped"))
+    })
+    .build
+  
+  val novaPage = ReactComponentB[Unit](getClass().getName())
+    .initialState()
+    .backend(_ => new AppBackend)
+    .render((_, S, B) => {
+      <.div(
+        entropyBar(B),
+        <.div(^.cls := "row",
+          <.div(^.cls := "container z-depth-1",
+            <.h1("Stellar Wallet"),
+            <.div(^.cls := "modal", ^.id := "prompt_entropy",
+              <.div(^.cls := "modal-content",
+                <.h4("Create New Wallet"),
+                <.p("Randomness is ", <.em("VERY"), " important to ensure wallet secure."),
+                <.p("Now move mouse around and/or monkey typing to fill the entropy(randomness) pool.")
+              ),
+              <.div(^.cls := "modal-footer",
+                coloredProgressBar(B),
+                nextBtn(B)
+              )
+            )
+          )
+        )
+      )
+    })
+    .componentDidMount(c => {
+      JQueryMaterialize.openModal(jQuery("#prompt_entropy"))
+      //TODO
+      //c.backend.setInterval({c.setState((sjcl.veryrandom.isReady(), sjcl.veryrandom.getProgress()))}, 500)
+      c.backend.setInterval({c.backend.doTick()}, 500)
+    })
+    .configure(SetInterval.install)
+    .buildU
+
   import japgolly.scalajs.react.vdom.all._
 
+  case class State(wallet :WalletData, advmode :Boolean, modal :Int)
+
+  class Backend(T :BackendScope[Unit, State]) {
+  }
 
   val newSeedPanel = ReactComponentB[Unit](getClass().getName())
     .render((_) => {
@@ -189,35 +228,57 @@ object WalletApp {
   val page = ReactComponentB[Unit](getClass().getName())
     .render((_) => {      
       <.div(
-        ^.cls := "row",
-        <.div(
-          ^.cls := "col l4",
-          "Stellar"),
-        <.div(
-          ^.cls := "col l8",
-          "Wallet"),
         newSeedPanel(),
-        authPanel()
+        authPanel(),
+        <.div("Create Wallet")
       )
 
     }).buildU
 }
 
+object CogSplash{
+  val page = ReactComponentB[Unit](getClass().getName())
+    .render((_) => {
+      <.i(^.`class` := "fa fa-cog fa-spin fa-3x")
+    }).buildU
+
+  def render(ele :dom.Element) = page().render(ele)
+}
+
 object Main extends js.JSApp{
 
-  def checkWallet() {
-    if (Wallet.theWallet isDefined) {
-    }
-    else {
-    }
-  }
-
   def main(): Unit = {
+
+    import scalajs.concurrent.JSExecutionContext.Implicits.runNow
+
     dom.console.log(">main()");
+
     jQuery(() => {
       sjcl.veryrandom.reset()
-      WalletApp.page() render dom.document.getElementById("content")
-      EntropyPreparePage.entropyControl() render dom.document.getElementById("entropy_ctrl")
+
+
+      SplashLoader.loadWithRender("wallet.txt", (div) => {
+        CogSplash render div
+      }, 1 second)
+      .onComplete{
+        case Success(v) =>
+          //WalletApp.page() render dom.document.getElementById("content")
+          Wallet.parse(v) match {
+            case Some(wallet) => {
+              //EntropyWrapper()
+              "normal operation"
+            }
+            case None => {
+              "wallet malform"
+            }
+          }
+        case Failure(e) => {
+          dom.console.log("not found:"+e)
+          WalletApp.novaPage() render dom.document.body
+        }
+      }
+      //WalletApp.page() render dom.document.getElementById("content")
+      //EntropyPreparePage.entropyControl() render dom.document.getElementById("entropy_ctrl")
     })
   }
 }

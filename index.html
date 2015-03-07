@@ -16,25 +16,7 @@
 <script src="res/jquery.plugin.js"></script>
 <script src="res/jquery.keypad.js"></script>
 <script type="text/javascript" src="target/scala-2.11/stellar-coldsign-fastopt.js"></script>
-<script type="text/javascript">
-	function LoadFile() {
-	var oFrame = document.getElementById("frmFile");
-	var strRawContents = oFrame.contentWindow.document.body.childNodes[0].innerHTML;
-	Wallet().parse(strRawContents)
-	}
-</script>
 <script type="text/javascript" src="target/scala-2.11/stellar-coldsign-launcher.js"></script>
 
-<iframe id="frmFile" src="cold-wallet.txt" onload="LoadFile();" style="display: none;"></iframe>
-
-<header>
-  <div id="entropy_ctrl"> </div>
-</header>
-<main>
-  <div id="content"> <i class="fa fa-cog fa-spin fa-3x"></i> </div>
-</main>
-<footer>
-</footer>
-		
 </body>
 </html>
