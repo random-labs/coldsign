@@ -178,10 +178,10 @@ object WalletApp {
         <.div(^.cls := "row",
           <.div(^.cls := "input-field col s8",
             <.i(^.cls := P._2, ^.cls := "prefix"),
-            <.label(P._1+" Address", ^.cls := "active icon_prefix"),
+            <.label(P._1+" Address", ^.cls := "active"),
             addr match {
               case Success(s) => <.input(^.`type` := "text", ^.readOnly := "readonly", ^.cls := "validate", ^.value := s)
-              case Failure(e) => <.input(^.`type` := "text", ^.readOnly := "readonly", ^.cls := "validate", ^.value := "*Invalid Seed*") //e.toString()
+              case Failure(e) => <.input(^.`type` := "text", ^.readOnly := "readonly", ^.cls := "validate", ^.value := "-Invalid Seed-") //e.toString()
             }
           ),
           <.div(^.cls := "col s4 small",
@@ -218,7 +218,7 @@ object WalletApp {
           <.div(^.cls := "row",
             <.div(^.cls := "input-field col s8",
               <.i(^.cls := "mdi-action-account-circle prefix"),
-              <.label("Wallet Name", ^.cls := "icon_prefix"),
+              <.label("Wallet Name"),
               <.input(^.`type` := "text", ^.cls := "validate")
             )
           ),
@@ -226,7 +226,7 @@ object WalletApp {
           <.div(^.cls := "row",
             <.div(^.cls := "input-field col s8",
               <.i(^.cls := "mdi-editor-mode-edit prefix"),
-              <.label("Memo", ^.cls := "icon_prefix"),
+              <.label("Memo"),
               <.textarea(^.cls := "materialize-textarea")
             )
           ),
