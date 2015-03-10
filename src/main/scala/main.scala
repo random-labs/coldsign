@@ -154,7 +154,7 @@ object WalletApp {
     })
     .build
 
-  val seedCtrl = ReactComponentB[(String, AppBackend)](getClass().getName())
+  val seedCtrl = ReactComponentB[(String, String, AppBackend)](getClass().getName())
     .initialState(("", true))
     .backend(c => new {
       def gen() {
@@ -174,31 +174,31 @@ object WalletApp {
         seed.parse_json(S._1);
         seed.get_key().get_address().to_json().toString;
       }
-      <.div(^.cls := "row",
-        <.form(^.cls := "col s12",
-          <.div(^.cls := "row",
-            <.div(^.cls := "input-field col s8",
-              <.label(P._1+" Address", ^.cls := "active"),
-              addr match {
-                case Success(s) => <.input(^.`type` := "text", ^.`class` := "validate", ^.value := s)
-                case Failure(e) => <.input(^.`type` := "text", ^.`class` := "validate", ^.value := "Invalid Seed") //e.toString()
-              }
-            ),
-            <.div(^.cls := "col s4 small",
-              <.div(<.a("Generate randomly", ^.href := "#", ^.onClick --> {B.gen()})),
-              <.div(<.a((if (S._2) "Edit" else "Hide")+" secret key",
-                ^.href := "#", ^.onClick --> {B.toggle(S._2 == false)}
-              ))
-            )
+      <.div(
+        <.div(^.cls := "row",
+          <.div(^.cls := "input-field col s8",
+            <.i(^.cls := P._2, ^.cls := "prefix"),
+            <.label(P._1+" Address", ^.cls := "active icon_prefix"),
+            addr match {
+              case Success(s) => <.input(^.`type` := "text", ^.readOnly := "readonly", ^.cls := "validate", ^.value := s)
+              case Failure(e) => <.input(^.`type` := "text", ^.readOnly := "readonly", ^.cls := "validate", ^.value := "*Invalid Seed*") //e.toString()
+            }
           ),
-          <.div(^.classSet1("row", "credential" -> S._2),
-            <.div(^.cls := "input-field col s12",
-              <.label("Secret Key", ^.cls := "active"),
-              <.input(^.id := "seedCtrl_"+P._1, ^.value := S._1, ^.`type` := "text", ^.`class` := "validate", ^.onChange --> {
-                B.gen(jQuery("#seedCtrl_"+P._1).`val`().toString)
-                //dom.console.log()
-              })
-            )
+          <.div(^.cls := "col s4 small",
+            <.div(<.a("Generate randomly", ^.href := "#", ^.onClick --> {B.gen()})),
+            <.div(<.a(^.cls := "light-blue-text text-lighten-4",(if (S._2) "edit" else "hide")+" secret key",
+              ^.href := "#", ^.onClick --> {B.toggle(S._2 == false)}
+            ))
+          )
+        ),
+        <.div(^.classSet1("row", "credential" -> S._2),
+          <.div(^.cls := "input-field col s12",
+            <.label("Secret Key", ^.cls := "active"),
+            <.input(^.id := "seedCtrl_"+P._1, ^.value := S._1, ^.`type` := "text",
+              ^.cls := "validate light-blue-text text-lighten-4", ^.onChange --> {
+              B.gen(jQuery("#seedCtrl_"+P._1).`val`().toString)
+              //dom.console.log()
+            })
           )
         )
       )
@@ -208,14 +208,30 @@ object WalletApp {
   val walletPanel = ReactComponentB[(String, AppBackend)](getClass().getName())
     .render(P => {
       <.div(
-        <.h3("Stellar Wallet"+P._1),
+        <.h3("Setup Stellar Wallet"+P._1),
         // <.div(^.cls := "row",
         //   <.form(^.cls := "col s12",
 
         //     <.input(^.`type` := "text", ^.`class` := "validate")
         //   )),
-        seedCtrl(("Cold", P._2)),
-        seedCtrl(("Warm", P._2))
+        <.form(
+          <.div(^.cls := "row",
+            <.div(^.cls := "input-field col s8",
+              <.i(^.cls := "mdi-action-account-circle prefix"),
+              <.label("Wallet Name", ^.cls := "icon_prefix"),
+              <.input(^.`type` := "text", ^.cls := "validate")
+            )
+          ),
+          seedCtrl(("Offline", "mdi-action-account-balance", P._2)),
+          <.div(^.cls := "row",
+            <.div(^.cls := "input-field col s8",
+              <.i(^.cls := "mdi-editor-mode-edit prefix"),
+              <.label("Memo", ^.cls := "icon_prefix"),
+              <.textarea(^.cls := "materialize-textarea")
+            )
+          ),
+          seedCtrl(("Online", "mdi-action-wallet-travel", P._2))
+        )
       )
     })
     .build
@@ -265,7 +281,7 @@ object WalletApp {
 object CogSplash{
   val page = ReactComponentB[Unit](getClass().getName())
     .render((_) => {
-      <.i(^.`class` := "fa fa-cog fa-spin fa-3x")
+      <.i(^.cls := "fa fa-cog fa-spin fa-3x")
     }).buildU
 
   def render(ele :dom.Element) = page().render(ele)
