@@ -23,40 +23,6 @@ object Wallet{
   }
 }
 
-object GenerateAddressPage {
-  case class State(seed: String)
-
-  class Backend(T :BackendScope[Unit, State]) {
-    def genRandom() = {
-      T.setState(randomState)
-    }
-  }
-  def randomState = {
-    val seed = new stellar.Seed
-//    seed.random()
-    State(seed.to_json().toString)
-  }
-
-  val page = ReactComponentB[Unit](getClass().getName())
-    .initialState{randomState}
-    .backend(new Backend(_))
-    .render((_, S, B) => {
-      val seed = new stellar.Seed
-      seed.parse_json(S.seed)
-
-
-      <.div(
-        <.p("Secret seed"),
-        <.input(^.value := seed.to_json, ^.`type` := "text"),
-        <.button("Generate", ^.onClick --> B.genRandom),
-        <.p("Public Address"),
-        <.p(seed.get_key().get_address().to_json().toString),
-        <.span()
-      )
-    })
-      .buildU
-}
-
 object JQueryKeypad {
   trait prototype extends JQuery {
     def keypad(s :js.Any): this.type = js.native
@@ -170,51 +136,121 @@ object WalletApp {
       JQueryMaterialize.tooltip(jQuery(".tooltipped"))
     })
     .build
-  
+
+  def entropyModal = ReactComponentB[AppBackend](getClass().getName())
+    .render(P => {
+      <.div(^.cls := "modal", ^.id := "prompt_entropy",
+        <.div(^.cls := "modal-content",
+          <.h4("Create New Wallet"),
+          <.p("Randomness is ", <.em("VERY"), " important to ensure wallet secure."),
+          <.p("Now move the mouse around and/or monkey typing to fill the entropy(randomness) pool.")
+        ),
+        <.div(^.cls := "modal-footer",
+          coloredProgressBar(P),
+          nextBtn(P)
+        )
+      )
+
+    })
+    .build
+
+  val seedCtrl = ReactComponentB[(String, AppBackend)](getClass().getName())
+    .initialState(("", true))
+    .backend(c => new {
+      def gen() {
+        val seed = (new stellar.Seed).random()
+        c.setState((seed.to_json().toString, c._state.v._2))
+      }
+      def gen(s:String) {
+        c.setState((s, c._state.v._2))
+      }
+      def toggle(hidden :Boolean) {
+        c.setState((c._state.v._1, hidden))
+      }
+    })
+    .render((P,S,B) => {
+      val seed = new stellar.Seed
+      val addr = Try{
+        seed.parse_json(S._1);
+        seed.get_key().get_address().to_json().toString;
+      }
+      <.div(^.cls := "row",
+        <.form(^.cls := "col s12",
+          <.div(^.cls := "row",
+            <.div(^.cls := "input-field col s8",
+              <.label(P._1+" Address", ^.cls := "active"),
+              addr match {
+                case Success(s) => <.input(^.`type` := "text", ^.`class` := "validate", ^.value := s)
+                case Failure(e) => <.input(^.`type` := "text", ^.`class` := "validate", ^.value := "Invalid Seed") //e.toString()
+              }
+            ),
+            <.div(^.cls := "col s4 small",
+              <.div(<.a("Generate randomly", ^.href := "#", ^.onClick --> {B.gen()})),
+              <.div(<.a((if (S._2) "Edit" else "Hide")+" secret key",
+                ^.href := "#", ^.onClick --> {B.toggle(S._2 == false)}
+              ))
+            )
+          ),
+          <.div(^.classSet1("row", "credential" -> S._2),
+            <.div(^.cls := "input-field col s12",
+              <.label("Secret Key", ^.cls := "active"),
+              <.input(^.id := "seedCtrl_"+P._1, ^.value := S._1, ^.`type` := "text", ^.`class` := "validate", ^.onChange --> {
+                B.gen(jQuery("#seedCtrl_"+P._1).`val`().toString)
+                //dom.console.log()
+              })
+            )
+          )
+        )
+      )
+    })
+    .build
+
+  val walletPanel = ReactComponentB[(String, AppBackend)](getClass().getName())
+    .render(P => {
+      <.div(
+        <.h3("Stellar Wallet"+P._1),
+        // <.div(^.cls := "row",
+        //   <.form(^.cls := "col s12",
+
+        //     <.input(^.`type` := "text", ^.`class` := "validate")
+        //   )),
+        seedCtrl(("Cold", P._2)),
+        seedCtrl(("Warm", P._2))
+      )
+    })
+    .build
+
   val novaPage = ReactComponentB[Unit](getClass().getName())
     .initialState()
     .backend(_ => new AppBackend)
     .render((_, S, B) => {
+      // val seed = new stellar.Seed
+      // seed.parse_json(S.seed)
+
       <.div(
         entropyBar(B),
         <.div(^.cls := "row",
           <.div(^.cls := "container z-depth-1",
-            <.h1("Stellar Wallet"),
-            <.div(^.cls := "modal", ^.id := "prompt_entropy",
-              <.div(^.cls := "modal-content",
-                <.h4("Create New Wallet"),
-                <.p("Randomness is ", <.em("VERY"), " important to ensure wallet secure."),
-                <.p("Now move mouse around and/or monkey typing to fill the entropy(randomness) pool.")
-              ),
-              <.div(^.cls := "modal-footer",
-                coloredProgressBar(B),
-                nextBtn(B)
-              )
-            )
+            walletPanel(("", B)),
+            // <.div(
+            //   <.p("Secret seed"),
+            //   <.input(^.value := seed.to_json, ^.`type` := "text"),
+            //   <.button("Generate", ^.onClick --> B.genRandom),
+            //   <.p("Public Address"),
+            //   <.p(seed.get_key().get_address().to_json().toString),
+            //   <.span()
+            // ),
+            entropyModal(B)
           )
         )
       )
     })
     .componentDidMount(c => {
       JQueryMaterialize.openModal(jQuery("#prompt_entropy"))
-      //TODO
-      //c.backend.setInterval({c.setState((sjcl.veryrandom.isReady(), sjcl.veryrandom.getProgress()))}, 500)
-      c.backend.setInterval({c.backend.doTick()}, 500)
+      c.backend.setInterval({c.backend.doTick()}, 50)
     })
     .configure(SetInterval.install)
     .buildU
-
-  import japgolly.scalajs.react.vdom.all._
-
-  case class State(wallet :WalletData, advmode :Boolean, modal :Int)
-
-  class Backend(T :BackendScope[Unit, State]) {
-  }
-
-  val newSeedPanel = ReactComponentB[Unit](getClass().getName())
-    .render((_) => {
-      <.h1("Create Wallet")
-    }).buildU
 
   val authPanel = ReactComponentB[Unit](getClass().getName())
       .render((_) => {
@@ -224,16 +260,6 @@ object WalletApp {
       JQueryKeypad(jQuery("#randomKeyboard"))
     })
     .buildU
-
-  val page = ReactComponentB[Unit](getClass().getName())
-    .render((_) => {      
-      <.div(
-        newSeedPanel(),
-        authPanel(),
-        <.div("Create Wallet")
-      )
-
-    }).buildU
 }
 
 object CogSplash{
@@ -277,8 +303,6 @@ object Main extends js.JSApp{
           WalletApp.novaPage() render dom.document.body
         }
       }
-      //WalletApp.page() render dom.document.getElementById("content")
-      //EntropyPreparePage.entropyControl() render dom.document.getElementById("entropy_ctrl")
     })
   }
 }

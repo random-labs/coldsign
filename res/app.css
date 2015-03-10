@@ -1,3 +1,7 @@
 main {
 	/* background-color: #455a64; */
 }
+
+div.credential {
+	display :none;
+}
