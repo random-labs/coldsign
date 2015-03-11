@@ -194,11 +194,10 @@ object WalletApp {
         <.div(^.classSet1("row", "credential" -> S._2),
           <.div(^.cls := "input-field col s12",
             <.label("Secret Key", ^.cls := "active"),
-            <.input(^.id := "seedCtrl_"+P._1, ^.value := S._1, ^.`type` := "text",
-              ^.cls := "validate light-blue-text text-lighten-4", ^.onChange --> {
-              B.gen(jQuery("#seedCtrl_"+P._1).`val`().toString)
-              //dom.console.log()
-            })
+            <.input(^.value := S._1, ^.`type` := "text",
+              ^.cls := "validate light-blue-text text-lighten-4", ^.onChange ==> ({x :ReactEventI =>                
+                B.gen(x.target.value)
+              }))
           )
         )
       )
