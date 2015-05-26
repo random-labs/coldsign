@@ -99,7 +99,7 @@ object WalletApp {
         <.i(^.cls := "tiny mdi-navigation-refresh"))
     })
     .configure(Listenable.install(identity, (c) => {(a:EntropyStatus) =>{
-      if (a.ready != c._state.v) c.setState(a.ready)
+      if (a.ready != c.state) c.setState(a.ready)
     }}))
     .componentDidMount(c => {
       JQueryMaterialize.tooltip(jQuery(".tooltipped"))
@@ -130,7 +130,7 @@ object WalletApp {
 
     })
     .configure(Listenable.install(identity, (c) => {(a:EntropyStatus) =>{
-      if (a.ready != c._state.v) c.setState(a.ready)
+      if (a.ready != c.state) c.setState(a.ready)
     }}))
     .componentDidMount(c => {
       JQueryMaterialize.tooltip(jQuery(".tooltipped"))
@@ -159,13 +159,13 @@ object WalletApp {
     .backend(c => new {
       def gen() {
         val seed = (new stellar.Seed).random()
-        c.setState((seed.to_json().toString, c._state.v._2))
+        c.setState((seed.to_json().toString, c.state._2))
       }
       def gen(s:String) {
-        c.setState((s, c._state.v._2))
+        c.setState((s, c.state._2))
       }
       def toggle(hidden :Boolean) {
-        c.setState((c._state.v._1, hidden))
+        c.setState((c.state._1, hidden))
       }
     })
     .render((P,S,B) => {
@@ -262,7 +262,7 @@ object WalletApp {
     })
     .componentDidMount(c => {
       JQueryMaterialize.openModal(jQuery("#prompt_entropy"))
-      c.backend.setInterval({c.backend.doTick()}, 50)
+      c.backend.setInterval({c.backend.doTick()}, 50 millisecond)
     })
     .configure(SetInterval.install)
     .buildU
