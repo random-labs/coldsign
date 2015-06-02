@@ -54,14 +54,36 @@ object JQueryMaterialize {
     )
   }
 
-  def openModal(jq: JQuery) {
-    jq.openModal(js.Dynamic.literal(dismissible = false))
+  def openModal(jq: JQuery, dismissible: Boolean = false) {
+    jq.openModal(js.Dynamic.literal(dismissible = dismissible))
   }
 }
 
 
+package CommonViews {
+
+}
+
 object WalletApp {
 
+  abstract class EntropyNotification {
+  }
+  case class EntropyReset() extends EntropyNotification
+  case class EntropyUpdate(progress :Option[Double]) extends EntropyNotification
+
+  object Dispatch {
+    val entropyEvents = new Broadcaster[EntropyNotification] {
+      def reset() {
+        broadcast(EntropyReset())
+      }
+      def done() {
+        broadcast(EntropyUpdate(None))
+      }
+    }
+    val walletDataEvents = None //current useless
+  }
+
+///////////////////////////Legacy Code////////////////////////////////
   case class EntropyStatus(ready :Boolean, progress :Double)
   class AppBackend extends SetInterval with Broadcaster[EntropyStatus] {
     def doTick() = {
@@ -154,6 +176,40 @@ object WalletApp {
     })
     .build
 
+  def blobModal = ReactComponentB[AppBackend](getClass().getName())
+    .initialState({
+      val passwd = "kkaabbcd"
+      val plain = "hello sjcl! ==========================================================================================================================================================================================="
+      val ct = sjcl.crypto.enc(passwd, plain)
+      val pt = sjcl.crypto.dec(passwd, ct)
+      val blob = ct + "<br/>" + pt
+      blob
+    })
+    .render((P, S) => {
+      <.div(^.cls := "modal", ^.id := "prompt_blob",
+        <.div(^.cls := "modal-content",
+          <.h4(<.i(^.cls := "mdi-file-file-download left"), "Save the blob"),
+          <.div(^.cls := "row",
+            <.div(^.cls := "input-field col s12",
+              <.textarea(^.value := S, ^.cls := "materialize-textarea",
+                ^.readOnly := "readonly"
+              )
+            )
+          )
+        )
+      )
+
+    })
+    .componentDidMount(c => {
+      val refdiv = dom.document.createElement("div").asInstanceOf[dom.html.Div]
+      refdiv.className = "hiddendiv common"
+      dom.document.body.appendChild(refdiv)
+      jQuery(refdiv).css("width", jQuery(".materialize-textarea").width());
+      refdiv.textContent = c.state
+      jQuery(".materialize-textarea").css("height", jQuery(refdiv).height());
+    })
+    .build
+
   val seedCtrl = ReactComponentB[(String, String, AppBackend)](getClass().getName())
     .initialState(("", true))
     .backend(c => new {
@@ -229,7 +285,14 @@ object WalletApp {
               <.textarea(^.cls := "materialize-textarea")
             )
           ),
-          seedCtrl(("Online", "mdi-action-wallet-travel", P._2))
+          seedCtrl(("Online", "mdi-action-wallet-travel", P._2)),
+          <.div(^.cls := "row",
+            <.div(^.cls := "col s12 ",
+              <.button(^.cls := "btn-large waves-effect waves-light", ^.`type` := "submit",
+                "Save", <.i(^.cls := "mdi-action-done left"))
+            )
+          ),
+          ^.onSubmit --> {JQueryMaterialize.openModal(jQuery("#prompt_blob"), true)}
         )
       )
     })
@@ -255,7 +318,8 @@ object WalletApp {
             //   <.p(seed.get_key().get_address().to_json().toString),
             //   <.span()
             // ),
-            entropyModal(B)
+            entropyModal(B),
+            blobModal(B)
           )
         )
       )
