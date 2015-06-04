@@ -4,22 +4,21 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSName
 
 package stellar {
-  @JSName("stellar.UInt160")
-  class UInt160 extends js.Object {
-    def to_json() :js.Object = js.native
+  
+  @JSName("StellarBase.Keypair")
+  class Keypair extends js.Object{
+    def address():String = js.native
+    def seed():String = js.native
   }
 
-  @JSName("stellar.KeyPair")
-  class KeyPair extends js.Object{
-    def get_address() :UInt160 = js.native
+  @JSName("StellarBase.Keypair")
+  object Keypair extends js.Object{
+    def fromRawSeed(rawSeed :js.Array[Byte]):Keypair = js.native
+    def fromSeed(seed :String):Keypair = js.native
   }
 
-  @JSName("stellar.Seed")
-  class Seed extends js.Object{
-    def random() :Seed = js.native
-    def get_key() :KeyPair = js.native
-    def to_json() :js.Object = js.native
-    def parse_json(s :String) :Seed = js.native
+  object Seed {
+    def random() = Keypair.fromRawSeed(sjcl.veryrandom.randomWords(32))
   }
 
 

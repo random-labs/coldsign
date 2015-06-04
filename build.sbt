@@ -21,3 +21,6 @@ libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.2.8"
 
 jsDependencies += "org.webjars" % "react" % "0.13.3" / "react-with-addons.js" commonJSName "React" minified "react-with-addons.min.js"
 
+jsDependencies += ProvidedJS / "js/stellar-base.js" minified "js/stellar-base.min.js"
+
+jsDependencies += ProvidedJS / "js/sjcl.js"
